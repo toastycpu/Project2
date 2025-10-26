@@ -51,17 +51,19 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
+  
   title: {
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: 40,
+    fontWeight: "thin",
     marginBottom: 6,
   },
   text: {
-    fontSize: 16,
+    fontSize: 13,
     marginBottom: 10,
+    fontWeight: "bold",
   },
   mapButton: {
-    backgroundColor: "#8FA31E",
+    backgroundColor: "#ddb035ff",
     paddingVertical: 8,
     borderRadius: 8,
     alignItems: "center",

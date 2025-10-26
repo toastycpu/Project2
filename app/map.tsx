@@ -37,7 +37,7 @@ export default function MapScreen() {
       <Stack.Screen
         options={{
           title: "Map View",
-          headerStyle: { backgroundColor: "#8FA31E" },
+          headerStyle: { backgroundColor: "#ddb035ff" },
           headerTintColor: "#fff",
           headerTitleStyle: { fontWeight: "bold" },
         }}

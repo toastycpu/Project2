@@ -1,5 +1,6 @@
 import { StyleSheet, View, Pressable, Text } from "react-native";
 import { useRouter } from "expo-router";
+import { Feather, Ionicons} from "@expo/vector-icons";
 
 export default function BottomNav() {
   const router = useRouter();
@@ -7,10 +8,13 @@ export default function BottomNav() {
   return (
     <View style={styles.bottomNav}>
       <Pressable style={styles.navButton} onPress={() => router.push("/map")}>
-        <Text style={styles.navText}>Map</Text>
+         <Feather name="map-pin" size={26} color="#fff" />
+      </Pressable>
+      <Pressable style={styles.navButton} onPress={() => router.push("/create")}>
+        <Ionicons name="add-outline" size={30} color="#fff" />
       </Pressable>
       <Pressable style={styles.navButton} onPress={() => router.push("/profile")}>
-        <Text style={styles.navText}>Profile</Text>
+        <Ionicons name="person-outline" size={30} color="#fff" />
       </Pressable>
     </View>
   );
@@ -25,8 +29,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     paddingVertical: 16,
-    backgroundColor: "#D2D0A0",
+    backgroundColor: "#ddb035ff",
+    borderTopWidth: 0.5,
+    borderTopColor: "#ccc",
   },
   navButton: { alignItems: "center" },
-  navText: { color: "#fff", fontWeight: "bold" },
 });

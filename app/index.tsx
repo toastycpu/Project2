@@ -6,15 +6,14 @@ import {
   Keyboard,
   Platform,
   Text,
+  Alert,
 } from "react-native";
 import * as Location from "expo-location";
-import { useRouter, Stack } from "expo-router";
-import { useState, useEffect } from "react";
-import {useUser} from '@/context/UserContext';
-import { savePosts, loadPosts, saveComments, loadComments } from '@/storage/storage';
+import { useRouter, Stack, useFocusEffect } from "expo-router";
+import { useState, useEffect, useCallback } from "react";
+import { useAppContext } from "@/context/AppContext";
+import { savePosts, loadPosts, saveComments, loadComments } from "@/storage/storage";
 
-// Import components from app/appcomponents
-import PostInput from "../components/app/postinput";
 import PostCard from "../components/app/postcard";
 import TopSale from "../components/app/topsale";
 import BottomNav from "../components/app/bottomnav";
@@ -45,14 +44,14 @@ const dummyPosts: Post[] = [
   },
   {
     id: "2",
-    text: "Moving out! Furniture and electronics.",
+    text: "Moving out sale! Furniture and electronics.",
     lat: 37.1,
     lng: -113.57,
     createdAt: Date.now(),
   },
   {
     id: "3",
-    text: "Baby clothes and toys giveaway, everything must go!",
+    text: "Baby clothes and toys, everything must go!",
     lat: 37.095,
     lng: -113.565,
     createdAt: Date.now(),
@@ -61,57 +60,75 @@ const dummyPosts: Post[] = [
 
 export default function FeedScreen() {
   const router = useRouter();
-  const [postText, setPostText] = useState<string>("");
+  const { user } = useAppContext();
+
+  const [posts, setPosts] = useState<Post[]>(dummyPosts);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [topSalePost] = useState<Post>(dummyPosts[0]);
-  const [posts, setPosts] = useState<Post[]>(dummyPosts.slice(1));
   const [location, setLocation] = useState<{ lat: number; lng: number }>({
     lat: 37.0965,
     lng: -113.5654,
   });
 
-  const { user, toggleRole } = useUser();
-  const [comments, setComments] = useState<Comment[]>([]);
-
-  const addPost = (imageUri?: string | null) => {
-    const trimmed = postText.trim();
-    if (!trimmed && !imageUri) return;
-
-    const newPost: Post = {
-      id: Date.now().toString(),
-      text: trimmed,
-      lat: location.lat,
-      lng: location.lng,
-      createdAt: Date.now(),
-      imageUri,
-    };
-
-    setPosts((prev) => [newPost, ...prev]);
-    setPostText("");
+  const deletePost = (id: string) => {
+    Alert.alert("Delete Post", "Are you sure?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => setPosts((prev) => prev.filter((p) => p.id !== id)),
+      },
+    ]);
   };
 
-    useEffect(() => {
+  const getUserLocation = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission denied", "We need location access to tag your yard sale.");
+      return;
+    }
+
+    const loc = await Location.getCurrentPositionAsync({});
+    setLocation({
+      lat: loc.coords.latitude,
+      lng: loc.coords.longitude,
+    });
+  };
+
+  useEffect(() => {
     (async () => {
       const storedPosts = (await loadPosts()) || [];
       const storedComments = (await loadComments()) || [];
       if (storedPosts.length > 0) setPosts(storedPosts);
       if (storedComments.length > 0) setComments(storedComments);
+      await getUserLocation();
+    })();
+  }, []);
+
+  // 🔁 Reload posts every time this screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      (async () => {
+        const storedPosts = (await loadPosts()) || [];
+        setPosts(storedPosts);
       })();
-    }, []);
+    }, [])
+  );
 
-    useEffect(() => {
-      savePosts(posts);
-    }, [posts]);
+  useEffect(() => {
+    savePosts(posts);
+  }, [posts]);
 
-    useEffect(() => {
-      saveComments(comments);
-    }, [comments]);
+  useEffect(() => {
+    saveComments(comments);
+  }, [comments]);
 
   return (
     <>
       <Stack.Screen
         options={{
-          title: "ReFind",
-          headerStyle: { backgroundColor: "#9EBC8A" },
+          title: "YARDLY",
+          headerStyle: { backgroundColor: "#b7b3d9ff" },
           headerTintColor: "#fff",
           headerTitleStyle: { fontWeight: "bold" },
         }}
@@ -125,7 +142,9 @@ export default function FeedScreen() {
           <FlatList
             data={posts}
             keyExtractor={(p) => p.id}
-            renderItem={({ item }) => <PostCard post={item} />}
+            renderItem={({ item }) => (
+              <PostCard post={item} userRole={user.role} deletePost={deletePost} />
+            )}
             style={{ flex: 1 }}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
@@ -135,29 +154,13 @@ export default function FeedScreen() {
             contentContainerStyle={{ paddingBottom: 140 }}
             ListHeaderComponent={
               <>
-                {/* New Post input */}
-                <PostInput
-                  postText={postText}
-                  setPostText={setPostText}
-                  addPost={addPost}
-                />
-
-                {/* Top Sale */}
                 <TopSale topSalePost={topSalePost} setLocation={setLocation} />
-
                 <Text style={[styles.sectionTitle, { marginLeft: 16 }]}>
-                 New on the Block
+                  New on the Block
                 </Text>
-
-                <Text style={{ color: '#fff', textAlign: 'center', marginVertical: 8 }}>
-                  Logged in as: {user.role}
-                </Text>
-
               </>
             }
           />
-
-          {/* Bottom Nav */}
           <BottomNav />
         </View>
       </KeyboardAvoidingView>
@@ -166,11 +169,12 @@ export default function FeedScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#9EBC8A" },
+  container: { flex: 1, backgroundColor: "#b7b3d9ff" },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 25,
     fontWeight: "bold",
     marginBottom: 8,
     color: "#333",
   },
 });
+
